@@ -1,22 +1,190 @@
-/* 
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
+
+function Posicion(x,y)
+{
+    this.x=x;
+    this.y=y;
+}
+
+function CopoNieve(posicion,paisaje)
+{
+    //-- ATRIBUTOS --//
+    this.posicion=posicion;
+    this.paisaje=paisaje;
+    
+    //-- METODOS -- //
+    this.dibujar=dibujar;
+    this.mover=mover;
+    
+    function dibujar(contexto)
+    {
+        
+        //////////Fondo del dibujo////////////////
+        contexto.fillStyle = "white";
+        contexto.fillRect(this.posicion.x,this.posicion.y,2,2);
+    }
+    
+    function mover(ancho,alto)
+    {
+        random=Math.floor((Math.random() * 6) + 1);
+        switch (random)
+        {
+            case 1: if(this.posicion.x+1<ancho)
+                        this.posicion.x++;
+                    break;
+            case 2: if(this.posicion.x-1>0)
+                        this.posicion.x--;
+                    break;
+            case 3: if(this.posicion.x+2<ancho)
+                        this.posicion.x+=2;
+                    break;
+            case 4: if(this.posicion.x-2>0)
+                        this.posicion.x-=2;
+                    break;
+            case 5: this.posicion.y++;
+                    break;
+            case 6: this.posicion.y+=2;
+                    break;
+        }
+        
+    }
+}
+
+
+function Paisaje(ancho,alto)
+{
+    //-- ATRIBUTOS --//
+    this.alto=alto;
+    this.ancho=ancho;
+    this.copoNieveList = new Array();
+    this.nievePiso=new Array();
+    //-- METODOS --//
+    this.dibujar=dibujar;
+    this.init=init;
+    this.run=run;
+    this.comprobarNievePiso=comprobarNievePiso;
+    
+    //-- MAIN --///    
+    this.init();
+    
+    function dibujar(contexto)
+    {
+        //////////Fondo del dibujo////////////////
+        contexto.fillStyle = "#ccff99";
+        contexto.fillRect(0, 0, 800, 600);
+        
+        //--- DIBUJAR LOS COPOS DE NIEVE --//
+        for (i=0;i<this.copoNieveList.length;i++)
+        {
+            this.copoNieveList[i].dibujar(contexto);
+            //this.copoNieveList[i].mover();
+        }
+        
+        //-- DIBUJAR EL PISO ------//
+        for (var i = 0; i < this.ancho; i++) 
+        {
+            for (var j=0;j<this.alto;j++)
+            {
+                if(this.nievePiso[i][j])
+                {
+                    contexto.fillStyle = "white";
+                    contexto.fillRect(i,j,2,2);
+                }
+            }
+        }
+    }
+    
+    /**
+     * Verifica si el copo de Nieve topo el piso
+     */
+    function comprobarNievePiso(copoNieve,indice)
+    {
+        x=copoNieve.posicion.x;
+        y=copoNieve.posicion.y;
+        
+        //console.log("x="+x+"y="+y);
+        //console.log("valor="+this.nievePiso[x][y]);
+        
+        if(y>this.alto-3)
+        {
+            console.log("llego al piso ...");
+            this.nievePiso[x][y]=true;            
+            this.copoNieveList.splice(indice,1);
+        }
+        else
+        {        
+            if(this.nievePiso[x][y+1])
+            {
+                console.log("nieve sobre otra ...");
+               this.nievePiso[x][y]=true;
+                this.copoNieveList.splice(indice,1);
+            }
+        }
+    }
+    
+    function run()
+    {
+        this.copoNieveList.push(new CopoNieve(new Posicion(Math.floor((Math.random() * this.ancho) + 1),Math.floor((Math.random() * 10) + 1))));
+        //this.copoNieveList.push(new CopoNieve(new Posicion(Math.floor((Math.random() * this.ancho) + 1),Math.floor((Math.random() * 10) + 1))));
+        
+        for (i=0;i<this.copoNieveList.length;i++)
+        {
+            this.copoNieveList[i].mover(this.ancho,this.alto);
+            this.comprobarNievePiso(this.copoNieveList[i],i);
+        }
+    }
+    
+    function init()
+    {
+        //-- INICIAR EL ARRAY DEL PISO --//
+        for (var i = 0; i < this.ancho; i++) {
+            this.nievePiso[i]=new Array();            
+            for (var j=0;j<this.alto;j++)
+            {
+                this.nievePiso[i][j]=false;
+            }
+            //this.nievePiso[i]=new Array();
+            
+          }
+          
+          //console.log(this.nievePiso[319][10]);
+          //for (var i = 0; i < this.alto; i++) {
+            
+          //  for (var j=0;j<this.ancho;j++)
+          //  {
+          //      console.log(i+","+j+"->"+this.nievePiso[i][j]);
+          //  }
+            //this.nievePiso[i]=new Array();
+            
+          //}
+        
+    }
+    
+}
 
 /**
  * Clase que representa un circulo 
  * @author CARLOS SANCHEZ
  * @type type
  */
-class Circulo
+function imprimir()
 {
-    constructor(alto, ancho) 
-    {
+    console.log(this.alto);
+    console.log(this.ancho);
+}
+
+function Circulo(alto,ancho)
+{
     this.alto = alto;
     this.ancho = ancho;
-    }
+    this.imprimir=imprimir;
+   
 }
+
+
+/**
+ * Funcion que se encarga de redibujar los objetos en pantalla
+ * @returns {undefined}
+ */
 
 /**
  * Metodo principal que ejecuta la aplicacion
@@ -28,29 +196,49 @@ function main()
     //--------Obtiene el tipo de contexto para graficar en 2d ---//
     var canvas=document.getElementById("myCanvas");
     var contexto=canvas.getContext("2d");
-    var circuloVar=new Circulo(10,10);
+    var alto=canvas.height;
+    var ancho=canvas.width;
+    
+    //console.log(ancho+"-"+alto);
+    var paisaje=new Paisaje(ancho,alto);
+
+    //var circuloVar=new Circulo(10,10);
+    
     //----------Crea un lazo repetitico-------------//
-    var loop=window.setInterval(repaint,30);  
+    drawLoop=window.setInterval(repaint,5);  
+    //gameLoop=window.setInterval(repaint,10);  
     
+    var incrementalRun=0;
+    
+    function repaint()
+    {
+        //alert('dibujando');
+        //Console.log("ejemplo");
+        ////////dibuja el fondo del juego /////////////
+        paisaje.dibujar(contexto);
+        run();
+    }
+    
+    function run()
+    {
+        if(incrementalRun==100)
+            incrementalRun=0
+        
+        if(incrementalRun%4==0)
+        {
+            //console.log("metodo run ...");
+            paisaje.run();
+        }
+        //console.log(incrementalRun);
+        incrementalRun++;
+    }
 }
 
-/**
- * Funcion que se encarga de redibujar los objetos en pantalla
- * @returns {undefined}
- */
-function repaint()
-{
-    Console.log("ejemplo");
-    ////////dibuja el fondo del juego /////////////
-    contexto.fillStyle = "white";
-    contexto.fillRect(0, 0, 800, 600);
-    
-    contexto.arc(360,70,50,0,(Math.PI/180)*360,true);    
-}
 
+gameLoop=null;
+//circulo.imprimir();
 //----------- Lanza el metodo main cuando se cargo todo el contenido de la pagina ----// 
 window.addEventListener('DOMContentLoaded',main,false);
-
 
 
 
