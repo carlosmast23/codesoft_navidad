@@ -10,7 +10,8 @@ function CopoNieve(posicion,paisaje)
     //-- ATRIBUTOS --//
     this.posicion=posicion;
     this.paisaje=paisaje;
-    
+    this.resbalar=false;
+    this.direccionResbalarX=0; //Variable para saber a donde se tiene que resbalar la nieve
     //-- METODOS -- //
     this.dibujar=dibujar;
     this.mover=mover;
@@ -20,21 +21,21 @@ function CopoNieve(posicion,paisaje)
         
         //////////Fondo del dibujo////////////////
         contexto.fillStyle = "white";
-        contexto.fillRect(this.posicion.x,this.posicion.y,2,2);
+        contexto.fillRect(this.posicion.x,this.posicion.y,1,1);
     }
     
     function mover(ancho,alto)
     {
-        random=Math.floor((Math.random() * 6) + 1);
+        random=Math.floor((Math.random() * 5) + 1);
         switch (random)
         {
-            case 1: if(this.posicion.x+1<ancho)
+            case 1: if(this.posicion.x+1<ancho-2)
                         this.posicion.x++;
                     break;
             case 2: if(this.posicion.x-1>0)
                         this.posicion.x--;
                     break;
-            case 3: if(this.posicion.x+2<ancho)
+            case 3: if(this.posicion.x+2<ancho-4)
                         this.posicion.x+=2;
                     break;
             case 4: if(this.posicion.x-2>0)
@@ -42,8 +43,7 @@ function CopoNieve(posicion,paisaje)
                     break;
             case 5: this.posicion.y++;
                     break;
-            case 6: this.posicion.y+=2;
-                    break;
+
         }
         
     }
@@ -69,7 +69,8 @@ function Paisaje(ancho,alto)
     function dibujar(contexto)
     {
         //////////Fondo del dibujo////////////////
-        contexto.fillStyle = "#ccff99";
+        //contexto.fillStyle = "#ccff99";
+        contexto.fillStyle = "black";
         contexto.fillRect(0, 0, 800, 600);
         
         //--- DIBUJAR LOS COPOS DE NIEVE --//
@@ -104,26 +105,124 @@ function Paisaje(ancho,alto)
         //console.log("x="+x+"y="+y);
         //console.log("valor="+this.nievePiso[x][y]);
         
+        //Verifica que el copo de nieve no haya tocado el piso
         if(y>this.alto-3)
         {
-            console.log("llego al piso ...");
+            //console.log("llego al piso ...");
             this.nievePiso[x][y]=true;            
             this.copoNieveList.splice(indice,1);
         }
         else
-        {        
-            if(this.nievePiso[x][y+1])
+        {   
+            //Verificar que la nieve puede resbalar
+            if(copoNieve.resbalar)
             {
-                console.log("nieve sobre otra ...");
-               this.nievePiso[x][y]=true;
-                this.copoNieveList.splice(indice,1);
+                    //Verifica si el copo de nieve esta dentro de la altura
+                    if(copoNieve.posicion.y+1<this.alto)
+                    {
+                        //Verifica que la posicion de abajo este libre para caer
+                        if (!this.nievePiso[copoNieve.posicion.x][y + 1])
+                        {
+                            copoNieve.posicion.y++;
+
+                        } else
+                        {
+                            //Verifica que pueda avanzar a alguno de los dos lados
+                            if (copoNieve.posicion.x + this.direccionResbalarX > 0 && copoNieve.posicion.x + this.direccionResbalarX < this.ancho)
+                            {
+                                copoNieve.posicion.x += this.direccionResbalarX;
+                                
+                                //Tiene un 50% de seguir avanzando en X en la supeficie plana
+                                if (Math.floor((Math.random() * 10) + 1) >3)
+                                {
+                                    //Si la direccion ya tiene nieve elimina el copo de nieve
+                                    //caso contrario que con la misma direccion para la siguiente vuelte
+                                    if (this.nievePiso[x + this.direccionResbalarX][y])
+                                    {
+                                        this.nievePiso[copoNieve.posicion.x][copoNieve.posicion.y] = true;
+                                        this.copoNieveList.splice(indice, 1);
+                                    }
+                                } else
+                                {//Si no coincide en la probabilidad elimina el copo de nieve
+                                    console.log("copo nieve acoplado ..");
+                                    this.nievePiso[copoNieve.posicion.x][copoNieve.posicion.y] = true;
+                                    this.copoNieveList.splice(indice, 1);
+                                }
+                            } else
+                            {//Si el copo de nieve no puede avanzar es eliminado en el eje X
+                                this.nievePiso[copoNieve.posicion.x][copoNieve.posicion.y] = true;
+                                this.copoNieveList.splice(indice, 1);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        //Si el copo de nieve esta fuera de rango de la altura es eliminado
+                        this.copoNieveList.splice(indice, 1);
+                    }
+                
+            }//Si el copo de nieve esta cayendo sigue haciendo validacion hasta tocar piso
+            else
+            {
+                try {
+                    this.nievePiso[x][y+1];
+                } catch (err) {
+                    console.log(x+","+(y+1));
+                }
+                //console.log(x+","+(y+1));
+                if(this.nievePiso[x][y+1])
+                {
+                   //console.log("nieve sobre otra ...");
+                   //Busca randomicamente la direccion a donde resbalar el copo de nieve 
+                   direccionRandom=Math.floor((Math.random() * 2) + 1);
+                   if(direccionRandom==1)
+                       this.direccionResbalarX=1;
+                   else
+                       this.direccionResbalarX=-1;
+                  
+                   unaDireccion=false;
+                   //Valida que la direccion este dentro del rango del ancho
+                   if(!(x+this.direccionResbalarX>0 && x+this.direccionResbalarX<this.ancho))
+                   {
+                       this.direccionResbalarX=this.direccionResbalarX*-1;
+                       unaDireccion=true;
+                   }
+
+                    //Si la direccion ya tiene nieve busca la otra direccion o si no se puede mover termina el cliclo
+                    if (this.nievePiso[x + this.direccionResbalarX][y])
+                    {
+                        //Validar que tien la opcion de resbalar al otro lado
+                        if(!unaDireccion)
+                        {
+                            this.direccionResbalarX = this.direccionResbalarX * -1;
+
+                            if (this.nievePiso[x + this.direccionResbalarX][y])
+                            {
+                                //Si la nieve no tiene a donde resbalar se queda en esa posicion
+                                this.copoNieveList.splice(indice, 1);
+                                this.nievePiso[x][y] = true;
+                            }
+                            else
+                            {
+                                copoNieve.resbalar = true;
+                            }
+                        }
+                        
+                    } else
+                    {
+                        copoNieve.resbalar = true;
+                    }
+                    
+                   
+                   
+                }
             }
         }
     }
     
     function run()
     {
-        this.copoNieveList.push(new CopoNieve(new Posicion(Math.floor((Math.random() * this.ancho) + 1),Math.floor((Math.random() * 10) + 1))));
+        this.copoNieveList.push(new CopoNieve(new Posicion(Math.floor((Math.random() * (this.ancho-2)) + 1),Math.floor((Math.random() * 10) + 1))));
         //this.copoNieveList.push(new CopoNieve(new Posicion(Math.floor((Math.random() * this.ancho) + 1),Math.floor((Math.random() * 10) + 1))));
         
         for (i=0;i<this.copoNieveList.length;i++)
@@ -205,7 +304,7 @@ function main()
     //var circuloVar=new Circulo(10,10);
     
     //----------Crea un lazo repetitico-------------//
-    drawLoop=window.setInterval(repaint,5);  
+    drawLoop=window.setInterval(repaint,2);  
     //gameLoop=window.setInterval(repaint,10);  
     
     var incrementalRun=0;
